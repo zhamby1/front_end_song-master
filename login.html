@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <h1>Login</h1>
+    <nav>
+        <a href="/index.html">All Songs</a>
+        <a href="/add_song.html">Add Song</a>
+        <a href="/delete_song.html">Delete Song</a>
+    </nav>
+</br>
+
+    <form id="login" autocomplete="off">
+        <div>
+           <label for="username">Username:</label>
+           <input type="text" id="username">
+        </div>
+        <div>
+           <label for="password">Password:</label>
+           <input type="text" id="password">
+        </div>
+        <button id="loginBtn" type="button">Login</button>
+        <p id="errorMsg"></p>
+     </form>
+     
+     <button id="statusBtn">Display Status</button>
+     
+     <ul>        
+     </ul>
+
+     <script>
+         let token;
+
+         document.querySelector("#loginBtn").addEventListener("click",async function(){
+             const username = document.querySelector("#username").value
+             const password = document.querySelector("#password").value
+             login(username,password)
+
+         })
+
+         document.querySelector("#statusBtn").addEventListener("click", displayStatus)
+
+         async function login(username,password){
+             const login_cred = {
+                 username,
+                 password
+             }
+             //document.querySelector("errorMsg").innerHTML = ""
+             //sending the login/post request to the backend
+             const response = await fetch("http://localhost:3000/api/auth/",{
+                method: "POST",
+                 headers:{
+                     "Content-Type" : "application/json"
+                 },
+                 body: JSON.stringify(login_cred)
+
+             })
+             if(response.ok){
+                 //extract JWT token
+                 const tokenResponse = await response.json()
+                 token = tokenResponse.token
+                 uname = tokenResponse.username2
+                 auth = tokenResponse.auth
+                 console.log(token)
+                 //save token to local storage on web browser
+                 localStorage.setItem("token", token)
+                 localStorage.setItem("uname", uname)
+                 localStorage.setItem("auth", auth)
+                 window.location.replace("/index.html")
+             }
+             else{
+                 document.querySelector("#errorMsg").innerHTML = "Bad username/pass"
+             }
+
+
+
+         }
+        async function displayStatus(){
+            document.querySelector("ul").innerHTML = ""
+            //grab token from local storage to compare token list with backend server
+            const token_send = localStorage.getItem("token")
+            
+
+            //get all the user statuses
+            const response = await fetch("http://localhost:3000/api/status/",{
+                headers: {"X-Auth": token_send}
+            })
+
+            if (response.ok) {
+                // Display user statuses in unordered list
+                const users = await response.json();
+                let html = "";
+                
+                for (let user of users) {
+                 html += `<li>${user.username} - ${user.status}</li>`;
+                }
+                document.querySelector("ul").innerHTML = html;
+            }
+            
+            else {
+                document.querySelector("#errorMsg").innerHTML = "Error: " + response.status;
+            }
+        }
+
+
+     </script>
+</body>
+</html>
